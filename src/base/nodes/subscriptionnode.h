@@ -5,7 +5,6 @@
 #include <QVariantMap>
 #include <QLoggingCategory>
 
-#include "api/internal/model.h"
 #include "src/types/types.h"
 #include "src/types/logdef.h"
 
