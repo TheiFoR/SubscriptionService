@@ -1,85 +1,85 @@
-#include "connectionmanager.h"
+#include "subscriptionmanager.h"
 #include <qdatetime.h>
 
-LOG_DECLARE(ConnectionManager, Core)
-LOG_DECLARE(ConnectionManager, Subscribe)
-LOG_DECLARE(ConnectionManager, Subscriber)
-LOG_DECLARE(ConnectionManager, Command)
+LOG_DECLARE(SubscriptionManager, Core)
+LOG_DECLARE(SubscriptionManager, Subscribe)
+LOG_DECLARE(SubscriptionManager, Subscriber)
+LOG_DECLARE(SubscriptionManager, Command)
 
-ConnectionManager::ConnectionManager(QObject *parent)
+SubscriptionManager::SubscriptionManager(QObject *parent)
     : QObject{parent}
 {
-    qCInfo(categoryConnectionManagerCore) << "Create";
+    qCInfo(categorySubscriptionManagerCore) << "Create";
 
-    connect(this, &ConnectionManager::updateConnections, this, &ConnectionManager::handleUpdateConnections);
+    connect(this, &SubscriptionManager::updateConnections, this, &SubscriptionManager::handleUpdateConnections);
 }
 
-ConnectionManager::~ConnectionManager()
+SubscriptionManager::~SubscriptionManager()
 {
-    qCInfo(categoryConnectionManagerCore) << "Destroy";
+    qCInfo(categorySubscriptionManagerCore) << "Destroy";
     disconnect(this, nullptr, nullptr, nullptr);
-    qCInfo(categoryConnectionManagerCore) << "Destroy complete";
+    qCInfo(categorySubscriptionManagerCore) << "Destroy complete";
 }
 
-void ConnectionManager::handleCreateSubscribe(const QString &commandName, UInterface *obj)
+void SubscriptionManager::handleCreateSubscribe(const QString &commandName, SubscriptionNode *obj)
 {
-    qCInfo(categoryConnectionManagerSubscribe) << "Added new command:" << commandName << "from: " << obj;
+    qCInfo(categorySubscriptionManagerSubscribe) << "Added new command:" << commandName << "from: " << obj;
 
     m_commandSubscribe[commandName].append(obj);
     emit updateConnections();
 }
-void ConnectionManager::handleRemoveSubscribe(const QString &commandName, UInterface *obj)
+void SubscriptionManager::handleRemoveSubscribe(const QString &commandName, SubscriptionNode *obj)
 {
-    qCInfo(categoryConnectionManagerSubscribe) << "Removed command:" << commandName << "from: " << obj;
+    qCInfo(categorySubscriptionManagerSubscribe) << "Removed command:" << commandName << "from: " << obj;
 }
 
-void ConnectionManager::handleSubscriber(const QString &commandName, UInterface *obj, CallbackPacketFunction function, UInterface::SubscriptionType type)
+void SubscriptionManager::handleSubscriber(const QString &commandName, SubscriptionNode *obj, CallbackPacketFunction function, SubscriptionNode::SubscriptionType type)
 {
-    qCInfo(categoryConnectionManagerSubscriber) << "Added new packet:" << commandName << "from: " << obj;
+    qCInfo(categorySubscriptionManagerSubscriber) << "Added new packet:" << commandName << "from: " << obj;
 
     m_packetSubscribers[commandName].append(PacketFunctionContext{obj, function, type});
     emit updateConnections();
 }
-void ConnectionManager::handleUnsubscriber(const QString &commandName, UInterface *obj, CallbackPacketFunction function)
+void SubscriptionManager::handleUnsubscriber(const QString &commandName, SubscriptionNode *obj, CallbackPacketFunction function)
 {
-    qCInfo(categoryConnectionManagerSubscriber) << "Removed packet:" << commandName << "from: " << obj;
+    qCInfo(categorySubscriptionManagerSubscriber) << "Removed packet:" << commandName << "from: " << obj;
 }
 
-void ConnectionManager::handleDone(UInterface *obj)
+void SubscriptionManager::handleDone(SubscriptionNode *obj)
 {
-    qCInfo(categoryConnectionManagerCore) << "Object done:" << obj;
+    qCInfo(categorySubscriptionManagerCore) << "Object done:" << obj;
 
     QMetaObject::invokeMethod(obj, "start", Qt::QueuedConnection);
 
     emit updateConnections();
 }
 
-void ConnectionManager::handleSubscriber(const QString &commandName, UInterface *obj, CallbackCommandFunction function, UInterface::SubscriptionType type)
+void SubscriptionManager::handleSubscriber(const QString &commandName, SubscriptionNode *obj, CallbackCommandFunction function, SubscriptionNode::SubscriptionType type)
 {
-    qCInfo(categoryConnectionManagerSubscriber) << "Added new command:" << commandName << "from: " << obj;
+    qCInfo(categorySubscriptionManagerSubscriber) << "Added new command:" << commandName << "from: " << obj;
 
     m_commandSubscribers[commandName].append(CommandFunctionContext{obj, function, type});
     emit updateConnections();
 }
-void ConnectionManager::handleUnsubscriber(const QString &commandName, UInterface *obj, CallbackCommandFunction function)
+void SubscriptionManager::handleUnsubscriber(const QString &commandName, SubscriptionNode *obj, CallbackCommandFunction function)
 {
-    qCInfo(categoryConnectionManagerSubscriber) << "Removed command:" << commandName << "from: " << obj;
+    qCInfo(categorySubscriptionManagerSubscriber) << "Removed command:" << commandName << "from: " << obj;
 }
 
 
-void ConnectionManager::handleUpdateConnections()
+void SubscriptionManager::handleUpdateConnections()
 {
-    qCInfo(categoryConnectionManagerCore) << "Update connections";
+    qCInfo(categorySubscriptionManagerCore) << "Update connections";
     for (auto it = m_commandSubscribe.begin(); it != m_commandSubscribe.end(); ++it) {
-        const QList<UInterface*>& subscribes = it.value();
+        const QList<SubscriptionNode*>& subscribes = it.value();
 
-        for (UInterface* subscribe : subscribes) {
-            connect(subscribe, &UInterface::signalUCommand,
-                    this, &ConnectionManager::onCommandReceived,
+        for (SubscriptionNode* subscribe : subscribes) {
+            connect(subscribe, &SubscriptionNode::signalUCommand,
+                    this, &SubscriptionManager::onCommandReceived,
                     Qt::UniqueConnection);
 
-            connect(subscribe, &UInterface::signalUPacket,
-                    this, &ConnectionManager::onPacketReceived,
+            connect(subscribe, &SubscriptionNode::signalUPacket,
+                    this, &SubscriptionManager::onPacketReceived,
                     Qt::UniqueConnection);
         }
     }
@@ -111,25 +111,25 @@ void ConnectionManager::handleUpdateConnections()
     }
 }
 
-void ConnectionManager::onCommandReceived(const QString& commandName, const QVariantMap& data)
+void SubscriptionManager::onCommandReceived(const QString& commandName, const QVariantMap& data)
 {
-    qCDebug(categoryConnectionManagerCommand) << "Command received:" << commandName;
+    qCDebug(categorySubscriptionManagerCommand) << "Command received:" << commandName;
     auto sender = this->sender();
     auto it = m_commandSubscribers.find(commandName);
     if (it != m_commandSubscribers.end()) {
         bool onlySelf = true;
         for (const CommandFunctionContext& ctx : it.value()) {
-            qCDebug(categoryConnectionManagerCommand) << "Checking command for object:" << ctx.obj << "command:" << commandName << "type:" << ctx.type << "sender:" << sender << "this:" << this;
-            if (ctx.obj && (ctx.obj != sender || ctx.type == UInterface::SelfHandle)) {
+            qCDebug(categorySubscriptionManagerCommand) << "Checking command for object:" << ctx.obj << "command:" << commandName << "type:" << ctx.type << "sender:" << sender << "this:" << this;
+            if (ctx.obj && (ctx.obj != sender || ctx.type == SubscriptionNode::SelfHandle)) {
                 if(!m_sentLostCommands.empty()){
                     if(m_sentLostCommands.end() != std::find_if(m_sentLostCommands.begin(), m_sentLostCommands.end(), [ctx, commandName](const SentLostCommand& cmd){
                         return cmd.obj == ctx.obj && cmd.commandName == commandName;
                     })){
-                        qCDebug(categoryConnectionManagerCommand) << "Skipping lost command for object:" << ctx.obj << "command:" << commandName;
+                        qCDebug(categorySubscriptionManagerCommand) << "Skipping lost command for object:" << ctx.obj << "command:" << commandName;
                         continue;
                     }
                 }
-                qCDebug(categoryConnectionManagerCommand) << "Invoking command for object:" << ctx.obj << "command:" << commandName;
+                qCDebug(categorySubscriptionManagerCommand) << "Invoking command for object:" << ctx.obj << "command:" << commandName;
                 onlySelf = false;
                 QMetaObject::invokeMethod(ctx.obj, [ctx, data]() {
                     ctx.function(data);
@@ -143,10 +143,10 @@ void ConnectionManager::onCommandReceived(const QString& commandName, const QVar
             QObject* emmitter = nullptr;
             bool onlySelfCase = false;
             if (subsIt != m_commandSubscribe.end() && subscribers.size() == 1) {
-                UInterface* singleSubscriber = subscribers.first().obj;
+                SubscriptionNode* singleSubscriber = subscribers.first().obj;
 
                 // Проверяем, совпадает ли подписчик хотя бы с одним из эмиттеров
-                for (UInterface* emitter : subsIt.value()) {
+                for (SubscriptionNode* emitter : subsIt.value()) {
                     if (emitter == singleSubscriber) {
                         onlySelfCase = true;
                         break;
@@ -160,7 +160,7 @@ void ConnectionManager::onCommandReceived(const QString& commandName, const QVar
                     commandName,
                     data
                 });
-                qCWarning(categoryConnectionManagerCommand)
+                qCWarning(categorySubscriptionManagerCommand)
                 << "Lost command detected:" << commandName
                 << "Only one subscriber, and it matches one of the emitters."
                 << "Command is effectively unhandled by any other class.";
@@ -169,10 +169,10 @@ void ConnectionManager::onCommandReceived(const QString& commandName, const QVar
     }
     else{
         m_lostCommands.emplace_back(LostCommand{QDateTime::currentMSecsSinceEpoch(), commandName, data});
-        qCWarning(categoryConnectionManagerCommand) << "Lost command detected:" << commandName << "no handlers.";
+        qCWarning(categorySubscriptionManagerCommand) << "Lost command detected:" << commandName << "no handlers.";
     }
 }
-void ConnectionManager::onPacketReceived(const QString &commandName, const QVariantMap &data)
+void SubscriptionManager::onPacketReceived(const QString &commandName, const QVariantMap &data)
 {
     auto it = m_packetSubscribers.find(commandName);
     if (it != m_packetSubscribers.end()) {
