@@ -5,8 +5,7 @@
 #include <QVariantMap>
 #include <QLoggingCategory>
 
-#include "src/types/types.h"
-#include "src/types/logdef.h"
+#include <types/types.h>
 
 using namespace std::placeholders;
 
@@ -33,11 +32,11 @@ signals:
     void createSubscribe(const QString& commandName, SubscriptionNode* obj);
     void removeSubscribe(const QString& commandName, SubscriptionNode* obj);
 
-    void subscribe(const QString& commandName, SubscriptionNode* obj, CallbackCommandFunction function, SubscriptionType type = Default);
-    void subscribe(const QString& commandName, SubscriptionNode* obj, CallbackPacketFunction function, SubscriptionType type = Default);
+    void subscribe(const QString& commandName, SubscriptionNode* obj, subscriptionservice::CallbackCommandFunction function, SubscriptionNode::SubscriptionType type = Default);
+    void subscribe(const QString& commandName, SubscriptionNode* obj, subscriptionservice::CallbackPacketFunction function, SubscriptionNode::SubscriptionType type = Default);
 
-    void unsubscribe(const QString& commandName, SubscriptionNode* obj, CallbackCommandFunction function);
-    void unsubscribe(const QString& commandName, SubscriptionNode* obj, CallbackPacketFunction function);
+    void unsubscribe(const QString& commandName, SubscriptionNode* obj, subscriptionservice::CallbackCommandFunction function);
+    void unsubscribe(const QString& commandName, SubscriptionNode* obj, subscriptionservice::CallbackPacketFunction function);
 
     void done(SubscriptionNode* obj);
 };

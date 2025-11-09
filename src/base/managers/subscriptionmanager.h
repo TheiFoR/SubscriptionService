@@ -2,13 +2,17 @@
 #define SUBSCRIPTIONSMANAGER_H
 
 #include <QObject>
-#include <queue>
+#include <QDateTime>
+
+#include <types/logdef.h>
 
 #include <SubscriptionNode>
 
+namespace subscriptionservice {
+
 struct CommandFunctionContext{
     SubscriptionNode* obj;
-    CallbackCommandFunction function;
+    subscriptionservice::CallbackCommandFunction function;
     SubscriptionNode::SubscriptionType type;
 
     friend QDebug operator<<(QDebug dbg, const CommandFunctionContext& ctx) {
@@ -19,7 +23,7 @@ struct CommandFunctionContext{
 
 struct PacketFunctionContext{
     SubscriptionNode* obj;
-    CallbackPacketFunction function;
+    subscriptionservice::CallbackPacketFunction function;
     SubscriptionNode::SubscriptionType type;
 };
 
@@ -33,6 +37,8 @@ struct SentLostCommand{
     const QString commandName;
 };
 
+}
+
 class SubscriptionManager : public QObject
 {
     Q_OBJECT
@@ -44,11 +50,11 @@ public slots:
     void handleCreateSubscribe(const QString& commandName, SubscriptionNode* obj);
     void handleRemoveSubscribe(const QString& commandName, SubscriptionNode* obj);
 
-    void handleSubscriber(const QString& commandName, SubscriptionNode* obj, CallbackCommandFunction function, SubscriptionNode::SubscriptionType type);
-    void handleUnsubscriber(const QString& commandName, SubscriptionNode* obj, CallbackCommandFunction function);
+    void handleSubscriber(const QString& commandName, SubscriptionNode* obj,  subscriptionservice::CallbackCommandFunction function, SubscriptionNode::SubscriptionType type);
+    void handleUnsubscriber(const QString& commandName, SubscriptionNode* obj,  subscriptionservice::CallbackCommandFunction function);
 
-    void handleSubscriber(const QString& commandName, SubscriptionNode* obj, CallbackPacketFunction function, SubscriptionNode::SubscriptionType type);
-    void handleUnsubscriber(const QString& commandName, SubscriptionNode* obj, CallbackPacketFunction function);
+    void handleSubscriber(const QString& commandName, SubscriptionNode* obj,  subscriptionservice::CallbackPacketFunction function, SubscriptionNode::SubscriptionType type);
+    void handleUnsubscriber(const QString& commandName, SubscriptionNode* obj,  subscriptionservice::CallbackPacketFunction function);
 
     void handleDone(SubscriptionNode* obj);
 
@@ -62,14 +68,14 @@ private slots:
     void onPacketReceived(const QString& commandName, const QVariantMap& data);
 
 private:
-    QMap<const QString, QList<CommandFunctionContext>> m_commandSubscribers;
+    QMap<const QString, QList<subscriptionservice::CommandFunctionContext>> m_commandSubscribers;
     QMap<const QString, QList<SubscriptionNode*>> m_commandSubscribe;
 
-    QMap<const QString, QList<PacketFunctionContext>> m_packetSubscribers;
+    QMap<const QString, QList<subscriptionservice::PacketFunctionContext>> m_packetSubscribers;
     QMap<const QString, QList<SubscriptionNode*>> m_packetSubscribe;
 
-    std::list<LostCommand> m_lostCommands;
-    std::vector<SentLostCommand> m_sentLostCommands;
+    std::list<subscriptionservice::LostCommand> m_lostCommands;
+    std::vector<subscriptionservice::SentLostCommand> m_sentLostCommands;
 };
 
 #endif // SUBSCRIPTIONSMANAGER_H

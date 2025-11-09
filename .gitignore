@@ -52,3 +52,7 @@ compile_commands.json
 *creator.user*
 
 *_qmlcache.qrc
+
+# Others
+CMakeFiles
+cmake_install.cmake

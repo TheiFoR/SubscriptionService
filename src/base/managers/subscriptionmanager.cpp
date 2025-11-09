@@ -1,5 +1,4 @@
 #include "subscriptionmanager.h"
-#include <qdatetime.h>
 
 LOG_DECLARE(SubscriptionManager, Core)
 LOG_DECLARE(SubscriptionManager, Subscribe)
@@ -33,14 +32,14 @@ void SubscriptionManager::handleRemoveSubscribe(const QString &commandName, Subs
     qCInfo(categorySubscriptionManagerSubscribe) << "Removed command:" << commandName << "from: " << obj;
 }
 
-void SubscriptionManager::handleSubscriber(const QString &commandName, SubscriptionNode *obj, CallbackPacketFunction function, SubscriptionNode::SubscriptionType type)
+void SubscriptionManager::handleSubscriber(const QString &commandName, SubscriptionNode *obj, subscriptionservice::CallbackPacketFunction function, SubscriptionNode::SubscriptionType type)
 {
     qCInfo(categorySubscriptionManagerSubscriber) << "Added new packet:" << commandName << "from: " << obj;
 
-    m_packetSubscribers[commandName].append(PacketFunctionContext{obj, function, type});
+    m_packetSubscribers[commandName].append(subscriptionservice::PacketFunctionContext{obj, function, type});
     emit updateConnections();
 }
-void SubscriptionManager::handleUnsubscriber(const QString &commandName, SubscriptionNode *obj, CallbackPacketFunction function)
+void SubscriptionManager::handleUnsubscriber(const QString &commandName, SubscriptionNode *obj, subscriptionservice::CallbackPacketFunction function)
 {
     qCInfo(categorySubscriptionManagerSubscriber) << "Removed packet:" << commandName << "from: " << obj;
 }
@@ -54,14 +53,14 @@ void SubscriptionManager::handleDone(SubscriptionNode *obj)
     emit updateConnections();
 }
 
-void SubscriptionManager::handleSubscriber(const QString &commandName, SubscriptionNode *obj, CallbackCommandFunction function, SubscriptionNode::SubscriptionType type)
+void SubscriptionManager::handleSubscriber(const QString &commandName, SubscriptionNode *obj, subscriptionservice::CallbackCommandFunction function, SubscriptionNode::SubscriptionType type)
 {
     qCInfo(categorySubscriptionManagerSubscriber) << "Added new command:" << commandName << "from: " << obj;
 
-    m_commandSubscribers[commandName].append(CommandFunctionContext{obj, function, type});
+    m_commandSubscribers[commandName].append(subscriptionservice::CommandFunctionContext{obj, function, type});
     emit updateConnections();
 }
-void SubscriptionManager::handleUnsubscriber(const QString &commandName, SubscriptionNode *obj, CallbackCommandFunction function)
+void SubscriptionManager::handleUnsubscriber(const QString &commandName, SubscriptionNode *obj, subscriptionservice::CallbackCommandFunction function)
 {
     qCInfo(categorySubscriptionManagerSubscriber) << "Removed command:" << commandName << "from: " << obj;
 }
@@ -86,21 +85,21 @@ void SubscriptionManager::handleUpdateConnections()
 
     const qint64 currentTime = QDateTime::currentMSecsSinceEpoch();
     for(auto it = m_lostCommands.begin(); it != m_lostCommands.end();) {
-        const LostCommand& lostCommand = *it;
+        const subscriptionservice::LostCommand& lostCommand = *it;
         if (currentTime - lostCommand.lostTime <= 5000) { //5 seconds
             auto itSubscribers = m_commandSubscribers.find(lostCommand.commandName);
             if(itSubscribers != m_commandSubscribers.end()){
                 onCommandReceived(lostCommand.commandName, lostCommand.data);
-                for (const CommandFunctionContext& ctx : itSubscribers.value()) {
+                for (const subscriptionservice::CommandFunctionContext& ctx : itSubscribers.value()) {
                     auto alreadyExists = std::find_if(
                         m_sentLostCommands.begin(),
                         m_sentLostCommands.end(),
-                        [&](const SentLostCommand& s) {
+                        [&](const subscriptionservice::SentLostCommand& s) {
                             return s.obj == ctx.obj && s.commandName == lostCommand.commandName;
                         });
 
                     if (alreadyExists == m_sentLostCommands.end()) {
-                        m_sentLostCommands.emplace_back(SentLostCommand{ctx.obj, lostCommand.commandName});
+                        m_sentLostCommands.emplace_back(subscriptionservice::SentLostCommand{ctx.obj, lostCommand.commandName});
                     }
                 }
             }
@@ -118,11 +117,11 @@ void SubscriptionManager::onCommandReceived(const QString& commandName, const QV
     auto it = m_commandSubscribers.find(commandName);
     if (it != m_commandSubscribers.end()) {
         bool onlySelf = true;
-        for (const CommandFunctionContext& ctx : it.value()) {
+        for (const subscriptionservice::CommandFunctionContext& ctx : it.value()) {
             qCDebug(categorySubscriptionManagerCommand) << "Checking command for object:" << ctx.obj << "command:" << commandName << "type:" << ctx.type << "sender:" << sender << "this:" << this;
             if (ctx.obj && (ctx.obj != sender || ctx.type == SubscriptionNode::SelfHandle)) {
                 if(!m_sentLostCommands.empty()){
-                    if(m_sentLostCommands.end() != std::find_if(m_sentLostCommands.begin(), m_sentLostCommands.end(), [ctx, commandName](const SentLostCommand& cmd){
+                    if(m_sentLostCommands.end() != std::find_if(m_sentLostCommands.begin(), m_sentLostCommands.end(), [ctx, commandName](const subscriptionservice::SentLostCommand& cmd){
                         return cmd.obj == ctx.obj && cmd.commandName == commandName;
                     })){
                         qCDebug(categorySubscriptionManagerCommand) << "Skipping lost command for object:" << ctx.obj << "command:" << commandName;
@@ -155,7 +154,7 @@ void SubscriptionManager::onCommandReceived(const QString& commandName, const QV
             }
 
             if (onlySelfCase) {
-                m_lostCommands.emplace_back(LostCommand{
+                m_lostCommands.emplace_back(subscriptionservice::LostCommand{
                     QDateTime::currentMSecsSinceEpoch(),
                     commandName,
                     data
@@ -168,7 +167,7 @@ void SubscriptionManager::onCommandReceived(const QString& commandName, const QV
         }
     }
     else{
-        m_lostCommands.emplace_back(LostCommand{QDateTime::currentMSecsSinceEpoch(), commandName, data});
+        m_lostCommands.emplace_back(subscriptionservice::LostCommand{QDateTime::currentMSecsSinceEpoch(), commandName, data});
         qCWarning(categorySubscriptionManagerCommand) << "Lost command detected:" << commandName << "no handlers.";
     }
 }
@@ -176,7 +175,7 @@ void SubscriptionManager::onPacketReceived(const QString &commandName, const QVa
 {
     auto it = m_packetSubscribers.find(commandName);
     if (it != m_packetSubscribers.end()) {
-        for (const PacketFunctionContext& ctx : it.value()) {
+        for (const subscriptionservice::PacketFunctionContext& ctx : it.value()) {
             if (ctx.obj) {
                 QMetaObject::invokeMethod(ctx.obj, [ctx, commandName, data]() {
                     ctx.function(commandName, data);

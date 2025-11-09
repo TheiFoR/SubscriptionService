@@ -32,9 +32,8 @@ target_sources(${PROJECT_NAME}
 # ────────────────────────────────────────────────────────────────
 
 target_include_directories(${PROJECT_NAME}
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
     PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${CMAKE_CURRENT_SOURCE_DIR}/includes
         ${CMAKE_CURRENT_SOURCE_DIR}/src/base/nodes
         ${CMAKE_CURRENT_SOURCE_DIR}/src/base/managers
