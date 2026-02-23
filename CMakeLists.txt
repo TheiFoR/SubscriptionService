@@ -1,66 +1,37 @@
-# ────────────────────────────────────────────────────────────────
-#  SubscriptionService — lightweight external module
-# ────────────────────────────────────────────────────────────────
+﻿# CMakeList.txt : Top-level CMake project file, do global configuration
+# and include sub-projects here.
+#
+cmake_minimum_required (VERSION 3.8)
 
-cmake_minimum_required(VERSION 3.16)
-project(SubscriptionService LANGUAGES CXX)
+# *** Enable Hot Reload for MSVC compilers if supported. ***
 
-add_library(${PROJECT_NAME} STATIC)
+if (POLICY CMP0141)
+  cmake_policy(SET CMP0141 NEW)
+  set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
+endif()
 
-set(DEP_LIST
-    Quick
-    Multimedia
-)
+# *** Project Initialization ***
 
-# ────────────────────────────────────────────────────────────────
-#  Library declaration
-# ────────────────────────────────────────────────────────────────
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-file(GLOB_RECURSE PRIVATE_SRC
-    "src/*.cpp"
-    "src/*.h"
-    "src/*.hpp"
-)
+set(PROJECT_NAME "SubscriptionServiceApp")
+set(PROJECT_VERSION "0.1.0")
+set(PROJECT_VERSION_SUFFIX "beta")
+set(FULL_VERSION "${PROJECT_VERSION}-${PROJECT_VERSION_SUFFIX}")
 
-target_sources(${PROJECT_NAME}
-    PRIVATE
-        ${PRIVATE_SRC}
-)
+message(STATUS "Building ${PROJECT_NAME} version ${FULL_VERSION}")
 
-# ────────────────────────────────────────────────────────────────
-#  Include directories
-# ────────────────────────────────────────────────────────────────
+# *** Version Configuration ***
 
-target_include_directories(${PROJECT_NAME}
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
-        ${CMAKE_CURRENT_SOURCE_DIR}/includes
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/base/nodes
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/base/managers
-)
+project(${PROJECT_NAME}
+        VERSION ${PROJECT_VERSION}
+        LANGUAGES CXX)
 
-# ────────────────────────────────────────────────────────────────
-#  Include dependencies
-# ────────────────────────────────────────────────────────────────
+# *** Include sub-projects. ***
 
-foreach(dep IN LISTS DEP_LIST)
-    find_package(Qt6 REQUIRED COMPONENTS ${dep})
-endforeach()
+add_subdirectory (SubscriptionService)
+add_subdirectory (App)
 
-foreach(dep IN LISTS DEP_LIST)
-    target_link_libraries(${PROJECT_NAME}
-        PRIVATE Qt6::${dep}
-    )
-endforeach()
-
-
-# ────────────────────────────────────────────────────────────────
-#  Compilation settings (optional)
-# ────────────────────────────────────────────────────────────────
-
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
-
-# ────────────────────────────────────────────────────────────────
-#  If used standalone
-# ────────────────────────────────────────────────────────────────
-message(STATUS "Building external module: ${PROJECT_NAME}")
+message(STATUS "Build configuration complete.")
