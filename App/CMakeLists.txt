@@ -16,6 +16,10 @@ configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/src/version.h
 )
 
+message(STATUS "Source files: ${SOURCE_FILES}")
+message(STATUS "Header files: ${HEADER_FILES}")
+message(STATUS "Template files: ${TEMPLATE_FILES}")
+
 add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES} ${TEMPLATE_FILES})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES 
