@@ -65,12 +65,23 @@ target_compile_definitions(${LIB_NAME}
         ASIO_STANDALONE
 )
 
+set(BUILD_PATH "${CMAKE_BINARY_DIR}/build")
+
+if (DEFINED SUBSERVICE_BUILD_PATH)
+    set(BUILD_PATH "${SUBSERVICE_BUILD_PATH}")
+    message(STATUS "Using custom build path: ${BUILD_PATH}")
+endif()
+
 set_target_properties(${LIB_NAME} PROPERTIES 
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build/lib
-    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build/archive
+    RUNTIME_OUTPUT_DIRECTORY ${BUILD_PATH}
+    LIBRARY_OUTPUT_DIRECTORY ${BUILD_PATH}/lib
+    ARCHIVE_OUTPUT_DIRECTORY ${BUILD_PATH}/archive
 )
+
+set(SUBSERVICE_DLL_PATH "${CMAKE_BINARY_DIR}/build/${LIB_NAME}.dll")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET ${LIB_NAME} PROPERTY CXX_STANDARD 20)
 endif()
+
+message(STATUS "${LIB_NAME} library configured successfully. Path: ${SUBSERVICE_DLL_PATH}")
