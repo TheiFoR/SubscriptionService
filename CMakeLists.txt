@@ -12,10 +12,6 @@ endif()
 
 # *** Project Initialization ***
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
 set(PROJECT_NAME "SubscriptionServiceApp")
 set(PROJECT_VERSION "0.1.0")
 set(PROJECT_VERSION_SUFFIX "beta")
@@ -29,9 +25,12 @@ project(${PROJECT_NAME}
         VERSION ${PROJECT_VERSION}
         LANGUAGES CXX)
 
+enable_testing()
+
 # *** Include sub-projects. ***
 
 add_subdirectory (SubscriptionService)
 add_subdirectory (App)
+add_subdirectory (tests)
 
-message(STATUS "Build configuration complete.")
+message(STATUS "Build configuration complete")

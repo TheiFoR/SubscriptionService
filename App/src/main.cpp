@@ -1,61 +1,111 @@
-﻿#include <iostream>
-
-#include <subscription_node.hpp>
-#include <node_manager.hpp>
-
 #include <asio/io_context.hpp>
+#include <asio/executor_work_guard.hpp>
 
-#include <any>
+#include <SubscriptionService/logger.hpp>
 
-class SS1 : public SubscriptionNode {
-public:
-	SS1() {
-		std::cout << "SS1 initialized." << std::endl;
+#include "core.h"
 
-		subscribe("TestCommand1", std::bind(&SS1::handleTestCommand1, this, std::placeholders::_1));
+// class SS3 : public SubscriptionNode {
+// public:
+// 	explicit SS3(SubscriptionNode* parentNode) : SubscriptionNode(parentNode)
+// 	{
+// 		NSS::NSS::Log::info("SS3", "Core", "Initialized");
 
-		signalUCommand("TestCommand1", 1);
-		signalUPacket("TestPacket1", std::string("1 Hello, World!"));
-	}
+// 		subscribe("TestCommand1", std::bind(&SS3::handleTestCommand1, this, std::placeholders::_1));
 
-	void handleTestCommand1(const std::any& data) {
-		std::cout << "Handling TestCommand1 with data: " << std::any_cast<int>(data) << std::endl;
-	}
-};
+// 		signalUCommand("TestCommand3", 3);
+// 		// signalUPacket("TestPacket3", std::string("3 Hello, World!"));
+// 	}
 
-class SS2 : public SubscriptionNode {
-public:
-	SS2() {
-		std::cout << "SS2 initialized." << std::endl;
+// 	void handleTestCommand1(const std::any& data) {
+// 		NSS::NSS::Log::info("SS3", "C1", "Handling TestCommand1 with data: " + std::to_string(std::any_cast<int>(data)));
+// 	}
+// };
 
-		subscribe("TestCommand2", std::bind(&SS2::handleTestCommand2, this, std::placeholders::_1));
+// class SS1 : public SubscriptionNode {
+// public:
+// 	SS1() : SubscriptionNode()
+// 	{
+// 		NSS::NSS::Log::info("SS1", "Core", "Initialized");
 
-		signalUCommand("TestCommand2", 2);
-		signalUPacket("TestPacket2", std::string("2 Hello, World!"));
-	}
+// 		subscribe("TestCommand1", std::bind(&SS1::handleTestCommand1, this, std::placeholders::_1));
+// 		subscribe("TestCommand3", std::bind(&SS1::handleTestCommand3, this, std::placeholders::_1));
 
-	void handleTestCommand2(const std::any& data) {
-		std::cout << "Handling TestCommand2 with data: " << std::any_cast<int>(data) << std::endl;
-	}
-};
+// 		signalUCommand("TestCommand1", 1);
+// 		// signalUPacket("TestPacket1", std::string("1 Hello, World!"));
+// 	}
+
+// 	void handleTestCommand1(const std::any& data) {
+// 		NSS::NSS::Log::info("SS1", "C1", "Handling TestCommand1 with data: " + std::to_string(std::any_cast<int>(data)));
+// 	}
+// 	void handleTestCommand3(const std::any& data) {
+// 		NSS::NSS::Log::info("SS1", "C3", "Handling TestCommand3 with data: " + std::to_string(std::any_cast<int>(data)));
+// 	}
+// };
+
+// class SS2 : public SubscriptionNode {
+// public:
+// 	SS2(SubscriptionNode* parentNode)
+// 		: SubscriptionNode(parentNode)
+// 		, ss3(this)
+// 	{
+// 		NSS::NSS::Log::info("SS2", "Core", "Initialized");
+
+// 		subscribe("TestCommand2", std::bind(&SS2::handleTestCommand2, this, std::placeholders::_1));
+
+// 		signalUCommand("TestCommand2", 2);
+// 		// signalUPacket("TestPacket2", std::string("2 Hello, World!"));
+// 	}
+
+// 	void handleTestCommand2(const std::any& data) {
+// 		NSS::NSS::Log::info("SS2", "C2", "Handling TestCommand2 with data: " + std::to_string(std::any_cast<int>(data)));
+// 	}
+
+// private:
+// 	SS3 ss3;
+// };
+
+// class SS4 : public SubscriptionNode {
+// public:	
+// 	SS4() 
+// 		: SubscriptionNode()
+// 		, ss2(this)
+// 	{
+// 		NSS::NSS::Log::info("SS4", "Core", "Initialized");
+
+// 		subscribe("TestCommand1", std::bind(&SS4::handleTestCommand1, this, std::placeholders::_1));
+
+// 		signalUCommand("TestCommand1", 4);
+// 		// signalUPacket("TestPacket1", std::string("4 Hello, World!"));
+// 	}
+
+// 	void handleTestCommand1(const std::any& data) {
+// 		NSS::NSS::Log::info("SS4", "C1", "Handling TestCommand1 with data: " + std::to_string(std::any_cast<int>(data)));
+// 	}
+
+// private:
+// 	SS2 ss2;
+// };
 
 int main()
 {
-	asio::io_context io;
+	asio::io_context ioContext;
+	asio::executor_work_guard<asio::io_context::executor_type> workGuard(ioContext.get_executor());
 
-	// ==========
-	NodeManager manager;
+	Core core{};
 
-	SS1 ss1;
-	SS2 ss2;
+	// NodeManager manager;
 
-	manager.addNode(&ss1);
-	manager.addNode(&ss2);
+	// SS1 ss1;
+	// SS4 ss4;
 
-	// ==========
+	// manager.addNode(&ss1);
+	// manager.addNode(&ss4);
 
-	auto work = asio::make_work_guard(io);
-	io.run();
+	// NSS::NSS::Log::info("Main", "Tree", "SS1 direct children: " + std::to_string(ss1.getChildren().size()));
+	// NSS::NSS::Log::info("Main", "Tree", "SS4 direct children: " + std::to_string(ss4.getChildren().size()));
+
+	ioContext.run();
 
 	return 0;
 }

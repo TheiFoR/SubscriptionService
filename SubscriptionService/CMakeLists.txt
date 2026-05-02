@@ -1,4 +1,4 @@
-﻿set(LIB_NAME "SubscriptionService")
+set(LIB_NAME "SubscriptionService")
 
 message(STATUS "Configuring ${LIB_NAME} library...")
 
@@ -18,15 +18,18 @@ FetchContent_MakeAvailable(asio)
 
 set(SUBSERVICE_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
-file(GLOB_RECURSE SOURCE_FILES
+file(GLOB_RECURSE SOURCE_FILES CONFIGURE_DEPENDS
     "src/*.cpp"
 )
-file(GLOB_RECURSE HEADER_FILES
+file(GLOB_RECURSE HEADER_FILES CONFIGURE_DEPENDS
     "include/*.hpp"
     "include/*.h"
     "include/*.inl"
+    "internal/*.hpp"
+    "internal/*.h"
+    "internal/*.inl"
 )
-file(GLOB_RECURSE TEMPLATE_FILES
+file(GLOB_RECURSE TEMPLATE_FILES CONFIGURE_DEPENDS
     "src/*.tpp"
 )
 
@@ -60,9 +63,11 @@ target_include_directories(${LIB_NAME}
 )
 
 target_compile_definitions(${LIB_NAME} 
+    PUBLIC
+        ASIO_STANDALONE
+        _WIN32_WINNT=0x0601
     PRIVATE
         SUBSCRIPTIONSERVICE_EXPORTS
-        ASIO_STANDALONE
 )
 
 set(BUILD_PATH "${CMAKE_BINARY_DIR}/build")
